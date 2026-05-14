@@ -44,8 +44,13 @@ def init_db():
         db = get_db()
         cur = db.cursor()
         cur.execute("""
-            ALTER TABLE alumnos
-            ADD COLUMN foto_url VARCHAR(500)
+            CREATE TABLE IF NOT EXISTS alumnos (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                nombre VARCHAR(50) NOT NULL,
+                apellido VARCHAR(50) NOT NULL,
+                fecha_nacimiento DATE NOT NULL,
+                foto_url VARCHAR(500)
+            )
         """)
         db.commit()
         db.close()
@@ -187,7 +192,8 @@ def upload_foto(file, alumno_id):
         key,
         ExtraArgs={"ContentType": file.content_type or "image/jpeg"},
     )
-    return f"{S3_ENDPOINT}/{S3_BUCKET}/{key}"
+    public_url = os.getenv("S3_PUBLIC_URL", S3_ENDPOINT)
+    return f"{public_url}/{S3_BUCKET}/{key}"
 
 # ── Rutas ─────────────────────────────────────────────────────────────────────
 @app.route("/")
