@@ -19,9 +19,10 @@ DB_CONFIG = {
 }
 
 # ── Configuración S3 / Floci ──────────────────────────────────────────────────
-S3_ENDPOINT   = os.getenv("S3_ENDPOINT",   "http://localhost:4566")
-S3_REGION     = os.getenv("S3_REGION",     "us-east-1")
-S3_BUCKET     = os.getenv("S3_BUCKET",     "fotos-alumnos")
+S3_ENDPOINT    = os.getenv("S3_ENDPOINT",   "http://localhost:4566")
+S3_PUBLIC_URL  = os.getenv("S3_PUBLIC_URL", S3_ENDPOINT)
+S3_REGION      = os.getenv("S3_REGION",     "us-east-1")
+S3_BUCKET      = os.getenv("S3_BUCKET",     "fotos-alumnos")
 AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID",     "test")
 AWS_SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "test")
 
@@ -44,13 +45,8 @@ def init_db():
         db = get_db()
         cur = db.cursor()
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS alumnos (
-                id INT PRIMARY KEY AUTO_INCREMENT,
-                nombre VARCHAR(50) NOT NULL,
-                apellido VARCHAR(50) NOT NULL,
-                fecha_nacimiento DATE NOT NULL,
-                foto_url VARCHAR(500)
-            )
+            ALTER TABLE alumnos
+            ADD COLUMN foto_url VARCHAR(500)
         """)
         db.commit()
         db.close()
@@ -192,8 +188,7 @@ def upload_foto(file, alumno_id):
         key,
         ExtraArgs={"ContentType": file.content_type or "image/jpeg"},
     )
-    public_url = os.getenv("S3_PUBLIC_URL", S3_ENDPOINT)
-    return f"{public_url}/{S3_BUCKET}/{key}"
+    return f"{S3_PUBLIC_URL}/{S3_BUCKET}/{key}"
 
 # ── Rutas ─────────────────────────────────────────────────────────────────────
 @app.route("/")
