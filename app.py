@@ -1,7 +1,9 @@
 from flask import Flask, render_template_string, request, redirect, url_for
 import mysql.connector
+from prometheus_flask_exporter import PrometheusMetrics
 
 app = Flask(__name__)
+metrics = PrometheusMetrics(app)
 
 DB_CONFIG = {
     "host": "172.18.0.2",
