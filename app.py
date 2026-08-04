@@ -1,7 +1,8 @@
-from flask import Flask, render_template_string, request, redirect, url_for
+from flask import Flask, render_template_string, request, redirect, url_for, session
 import mysql.connector
 
 app = Flask(__name__)
+app.secret_key = "supersecreto123"
 
 DB_CONFIG = {
     "host": "172.18.0.2",
@@ -28,7 +29,10 @@ BASE = """
 <nav class="navbar navbar-dark bg-primary mb-4">
   <div class="container">
     <span class="navbar-brand fw-bold">🎓 Gestión de Alumnos</span>
-    <a href="/" class="btn btn-outline-light btn-sm">Ver todos</a>
+    <div>
+      <a href="/" class="btn btn-outline-light btn-sm">Ver todos</a>
+      <a href="/logout" class="btn btn-outline-light btn-sm">Salir</a>
+    </div>
   </div>
 </nav>
 <div class="container">
@@ -112,6 +116,84 @@ FORM_TPL = BASE.replace("{% block content %}{% endblock %}", """
 </div>
 {% endblock %}
 """)
+
+LOGIN_TPL = """
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ingresar — Gestión de Alumnos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-primary mb-4">
+  <div class="container">
+    <span class="navbar-brand fw-bold">🎓 Gestión de Alumnos</span>
+  </div>
+</nav>
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Iniciar sesión</h5>
+        </div>
+        <div class="card-body">
+          {% if error %}
+          <div class="alert alert-danger">{{ error }}</div>
+          {% endif %}
+          <form method="POST">
+            <div class="mb-3">
+              <label class="form-label">Usuario</label>
+              <input type="text" name="usuario" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Contraseña</label>
+              <input type="password" name="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+"""
+
+# ── Autenticación ────────────────────────────────────────────────────────────
+
+@app.before_request
+def requerir_login():
+    rutas_publicas = {"login", "static"}
+    if request.endpoint not in rutas_publicas and not session.get("logged_in"):
+        return redirect(url_for("login"))
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+    if request.method == "POST":
+        usuario = request.form["usuario"]
+        password = request.form["password"]
+        db = get_db()
+        cur = db.cursor()
+        query = f"SELECT id, usuario FROM usuarios WHERE usuario = '{usuario}' AND password = '{password}'"
+        cur.execute(query)
+        fila = cur.fetchone()
+        db.close()
+        if fila:
+            session["logged_in"] = True
+            session["usuario"] = fila[1]
+            return redirect(url_for("index"))
+        error = "Usuario o contraseña incorrectos"
+    return render_template_string(LOGIN_TPL, error=error)
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 # ── Rutas ────────────────────────────────────────────────────────────────────
 
