@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, render_template_string, request, redirect, url_for, session
 import mysql.connector
 
@@ -5,11 +7,11 @@ app = Flask(__name__)
 app.secret_key = "supersecreto123"
 
 DB_CONFIG = {
-    "host": "172.18.0.2",
-    "port": 3306,
-    "user": "root",
-    "password": "mysecretpassword",
-    "database": "alumnos",
+    "host": os.environ.get("DB_HOST", "mysql"),
+    "port": int(os.environ.get("DB_PORT", 3306)),
+    "user": os.environ.get("DB_USER", "root"),
+    "password": os.environ.get("DB_PASSWORD", "changeme"),
+    "database": os.environ.get("DB_NAME", "alumnos"),
 }
 
 def get_db():
