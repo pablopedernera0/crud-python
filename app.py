@@ -179,8 +179,10 @@ def login():
         password = request.form["password"]
         db = get_db()
         cur = db.cursor()
-        query = f"SELECT id, usuario FROM usuarios WHERE usuario = '{usuario}' AND password = '{password}'"
-        cur.execute(query)
+        cur.execute(
+            "SELECT id, usuario FROM usuarios WHERE usuario = %s AND password = %s",
+            (usuario, password),
+        )
         fila = cur.fetchone()
         db.close()
         if fila:
